@@ -4,20 +4,8 @@ using System.Linq;
 
 namespace Utilities
 {
-	public static class Utils
+	public static partial class Utils
 	{
-		public static string[] ToStringArray(string data, string separator = "\n")
-			=> data.Split(separator);
-
-		public static int[] ToIntArray(string data, string separator = "\n")
-			=> data.Split(separator).Select(x => int.Parse(x)).ToArray();
-
-		public static long[] ToLongArray(string data, string separator = "\n")
-			=> data.Split(separator).Select(x => long.Parse(x)).ToArray();
-
-		public static ulong[] ToUnsignedLongArray(string data, string separator = "\n")
-			=> data.Split(separator).Select(x => ulong.Parse(x)).ToArray();
-
 		public static (List<TSource> TruthyValues, List<TSource> FalsyValues) Bifurcate<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> fn)
 		{
 			if (source == null)
