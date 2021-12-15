@@ -17,6 +17,13 @@ namespace Advent_Of_Code
 				.Select((x, i) => x > depths[i])
 				.Count(x => x);
 
+/*			int counter = 0;
+			for(int i = 1; i< depths.Length; i++)
+			{
+				if (depths[i] > depths[i - 1])
+					counter++;
+			}*/
+
 			return new ValueTask<string>(part1.ToString());
 		}
 

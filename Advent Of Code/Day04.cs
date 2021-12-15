@@ -9,67 +9,73 @@ namespace Advent_Of_Code
 {
 	class Day04 : BaseDay
 	{
+		private List<BingoCard> cards = new();
+
 		public override ValueTask<string> Solve1()
 		{
-
 			var data = Utils.ToStringArray(RawData);
-			var bingo = Utils.ToIntArray(data[0], ",");
+			var bingoNumbers = Utils.ToIntArray(data[0], ",");
 
-			int winningPoints = 0;
+			var cardNumbers = data.ToList();
+			cardNumbers.RemoveAt(0);
+			cardNumbers.RemoveAt(0);
 
-			List<BingoCard> cards = new();
-			var idx = 0;
+			GenerateBingoCards(cardNumbers.ToArray());
 
-			var card = new BingoCard();
-			for (int i = 2; i < data.Length; i++)
+			foreach (var number in bingoNumbers)
 			{
-				if (!string.IsNullOrWhiteSpace(data[i]))
+				foreach (var card in cards)
 				{
-					card.SetCardRow(data[i].Replace("\r", ""), idx);
-					idx++;
-				}
-				else
-				{
-					cards.Add(card);
-					card = new BingoCard();
-					idx = 0;
+					card.RegisterNumber(number);
+
+					if (CheckForBingo(number, card))
+						return new ValueTask<string>((card.CalculatePoints() * number).ToString());
 				}
 			}
 
-			cards.Add(card);
-			var j = 5;
-			for (j = 5; j < bingo.Length; j++)
-			{
-				int[] result = new int[j];
-				Array.Copy(bingo, result, j);
-
-				foreach (var bingoCard in cards)
-				{
-					if (bingoCard.IsWinning(result))
-					{
-						
-						winningPoints = bingoCard.WinningPoints;
-						return new ValueTask<string>(winningPoints.ToString());
-					}
-				}
-			}
-
-			
-			return new ValueTask<string>(winningPoints.ToString());
+			throw new NotImplementedException();
 		}
 
 		public override ValueTask<string> Solve2()
 		{
 			var data = Utils.ToStringArray(RawData);
-			var bingo = Utils.ToIntArray(data[0], ",");
+			var bingoNumbers = Utils.ToIntArray(data[0], ",");
 
-			int winningPoints = 0;
+			List<long> scores = new();
+			cards = new();
 
-			List<BingoCard> cards = new();
+			var cardNumbers = data.ToList();
+			cardNumbers.RemoveAt(0);
+			cardNumbers.RemoveAt(0);
+
+			GenerateBingoCards(cardNumbers.ToArray());
+
+			foreach (var number in bingoNumbers)
+			{
+				foreach (var card in cards)
+				{
+					card.RegisterNumber(number);
+
+					if (!card.Done && card.CheckForBingo())
+					{
+						scores.Add(card.CalculatePoints() * number);
+						card.Done = true;
+					}
+						
+				}
+			}
+
+			long score = scores.Where(x => x > 0).LastOrDefault();
+
+			return new ValueTask<string>(score.ToString());
+		}
+
+		private void GenerateBingoCards(string[] data)
+		{
+			var card = new BingoCard();
 			var idx = 0;
 
-			var card = new BingoCard();
-			for (int i = 2; i < data.Length; i++)
+			for (int i = 0; i < data.Length; i++)
 			{
 				if (!string.IsNullOrWhiteSpace(data[i]))
 				{
@@ -83,146 +89,83 @@ namespace Advent_Of_Code
 					idx = 0;
 				}
 			}
-
-			cards.Add(card);
-			var j = 5;
-
-			List<int> points = new();
-			for (j = 5; j < bingo.Length; j++)
-			{
-				int[] result = new int[j];
-				Array.Copy(bingo, result, j);
-
-				for(int i = 0; i < cards.Count; i++)
-				{
-					if(cards[i].IsWinning(result))
-					{
-						winningPoints = cards[i].WinningPoints;
-						cards.RemoveAt(i);
-						points.Add(winningPoints);
-						break;
-					}
-				}
-
-				/*foreach (var bingoCard in cards)
-				{
-					if (bingoCard.IsWinning(result))
-					{
-
-						winningPoints = bingoCard.WinningPoints;
-						cards.Remove(bingoCard);
-					}
-				}*/
-			}
-
-			return new ValueTask<string>(winningPoints.ToString());
 		}
+
+		private bool CheckForBingo(int number, BingoCard card)
+			=> card.CheckForBingo();
+
+
 	}
 
 	public class BingoCard
 	{
-		public int[,] Values { get; set; } = new int[5, 5];
-		public int[] Bingo { get; set; }
+		private int[,] Board { get; set; }
+		public bool Done { get; set; } = false;
+		public int WinningNumber { get; set; }
 
-		private int winningRow = -1;
-		private int winningColumn = -1;
-
-		public int WinningPoints { get; private set; } = -1;
+		public BingoCard()
+		{
+			Board = new int[5, 5];
+		}
 
 		public void SetCardRow(string row, int idx)
 		{
-			var cells = row.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-			for (int i = 0; i < Values.GetLength(0); i++)
-			{
-				Values[idx, i] = int.Parse(cells[i]);
-			}
+			var cells = row.Split(Array.Empty<char>(), StringSplitOptions.RemoveEmptyEntries);
+
+			for (int i = 0; i < 5; i++)
+				Board[idx, i] = int.Parse(cells[i]);
 		}
 
-		public bool IsWinning(int[] bingo)
+		public void RegisterNumber(int n)
 		{
-			Bingo = bingo;
+			if (Done)
+				return;
 
-			var rows = CheckRows();
-			var columns = CheckColumns();
+			for (int row = 0; row <= 4; row++)
+				for (int col = 0; col <= 4; col++)
+					if (Board[row, col] == n)
+						Board[row, col] = -1;
+		}
 
-			if (rows.Item1 || columns.Item1)
+		public bool CheckForBingo()
+		{
+			for (int row = 0; row <= 4; row++)
 			{
-				winningRow = rows.Item2;
-				winningColumn = columns.Item2;
+				int marked = 0;
+				for (int col = 0; col <= 4; col++)
+					if (Board[row, col] == -1)
+						marked++;
 
-				CalculateWinningPoints(bingo);
+				if (marked == 5)
+					return true;
+					
 
-				return true;
+			}
+
+			for (int row = 0; row <= 4; row++)
+			{
+				int marked = 0;
+				for (int col = 0; col <= 4; col++)
+					if (Board[col, row] == -1)
+						marked++;
+
+				if (marked == 5)
+					return true;
 			}
 
 			return false;
 		}
 
-		private void CalculateWinningPoints(int[] bingo)
+		public long CalculatePoints()
 		{
-			var finalPoint = bingo[bingo.Length - 1];
+			long total = 0;
 
-			if (winningRow != -1)
-				for (int i = 0; i < Values.GetLength(0); i++)
-					Values[winningRow, i] = 0;
+			for (int row = 0; row < 5; row++)
+				for (int col = 0; col < 5; col++)
+					if (Board[row, col] != -1)
+						total += Board[row, col];
 
-			if (winningColumn != -1)
-				for (int i = 0; i < Values.GetLength(1); i++)
-					Values[i, winningColumn] = 0;
-
-			for(int i = 0; i < Values.GetLength(0); i++)
-			{
-				for(int j = 0; j < Values.GetLength(1); j++)
-				{
-					if(bingo.Contains(Values[i, j]))
-					{
-						Values[i, j] = 0;
-					}
-				}
-			}
-
-			WinningPoints = Values.Cast<int>().Sum() * finalPoint;
-		}
-
-		public (bool, int) CheckRows()
-		{
-			for (int idx = 0; idx < Values.GetLength(0); idx++)
-				if (!GetRow(idx).Except(Bingo).Any())
-					return (true, idx);
-
-			return (false, -1);
-		}
-
-		private (bool, int) CheckColumns()
-		{
-			for (int idx = 0; idx < Values.GetLength(1); idx++)
-				if (!GetColumn(idx).Except(Bingo).Any())
-					return (true, idx);
-
-			return (false, -1);
-		}
-
-		private int[] GetRow(int rowIndex)
-			=> Enumerable.Range(0, Values.GetLength(1))
-				.Select(x => Values[rowIndex, x])
-				.ToArray();
-
-		private int[] GetColumn(int columnIndex)
-			=> Enumerable.Range(0, Values.GetLength(0))
-				.Select(x => Values[x, columnIndex])
-				.ToArray();
-
-		public void PrintCard()
-		{
-			for (int i = 0; i < Values.GetLength(1); i++)
-			{
-				for (int j = 0; j < Values.GetLength(0); j++)
-				{
-					Console.Write(Values[i, j] + "\t");
-				}
-
-				Console.Write("\n");
-			}
+			return total;
 		}
 	}
 }

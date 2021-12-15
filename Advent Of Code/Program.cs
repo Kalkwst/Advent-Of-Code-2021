@@ -38,7 +38,8 @@ namespace Advent_Of_Code
 
 		public async static void Test()
 		{
-			await Solver.SolvePart(true, new Day04());
+			List<string> signals = new() { "acedgfb","cdfbe", "gcdfa", "fbcad", "dab", "cefabd", "cdfgeb", "eafb", "cagedb", "ab" };
+			new Decoder(signals);
 		}
 	}
 }

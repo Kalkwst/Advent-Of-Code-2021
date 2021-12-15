@@ -16,21 +16,17 @@ namespace Advent_Of_Code
 
 			for (int i = 0; i < data[0].Length; i++)
 			{
-				(List<string> ones, List<string> zeros) = Utils.Bifurcate(GetBitsAt(data, i), IsOne);
 
-				if (ones.Count > zeros.Count)
-				{
-					gammaRate += "1";
+				string mostCommon = Utils.MostCommon(GetBitsAt(data, i));
+				gammaRate += mostCommon;
+				
+				if (mostCommon.Equals("1"))
 					epsilonRate += "0";
-				}
 				else
-				{
-					gammaRate += "0";
 					epsilonRate += "1";
-				}
 			}
 
-			var result =  (Convert.ToInt32(gammaRate, 2) * Convert.ToInt32(epsilonRate, 2)).ToString();
+			var result = (Convert.ToInt32(gammaRate, 2) * Convert.ToInt32(epsilonRate, 2)).ToString();
 			return new ValueTask<string>(result);
 		}
 
@@ -69,9 +65,6 @@ namespace Advent_Of_Code
 			return bits;
 		}
 
-		private static bool IsOne(string bit)
-			=> bit.Equals("1");
-
 		private static bool HasMostCommon(string sequence, string bit, int position)
 			=> sequence[position].ToString().Equals(bit);
 
@@ -82,12 +75,12 @@ namespace Advent_Of_Code
 
 			string mostCommon = Utils.MostCommon(GetBitsAt(sequences, index));
 
-			List<string> common = new List<string>();
-			List<string> uncommon = new List<string>();
+			List<string> common = new();
+			List<string> uncommon = new();
 
-			foreach(var sequence in sequences)
+			foreach (var sequence in sequences)
 			{
-				if(HasMostCommon(sequence, mostCommon, index))
+				if (HasMostCommon(sequence, mostCommon, index))
 				{
 					common.Add(sequence);
 				}
@@ -101,7 +94,7 @@ namespace Advent_Of_Code
 				if (uncommon[0][index].ToString().Equals("1"))
 					return GetOxygenRating(uncommon.ToArray(), index + 1);
 
-			return GetOxygenRating(common.ToArray(), index+1);
+			return GetOxygenRating(common.ToArray(), index + 1);
 		}
 
 		private static string GetCO2Rating(string[] sequences, int index)
